@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+@theme {
+  --color-netflix-red: #e50914;
+  --color-netflix-black: #141414;
+  --color-netflix-dark: #181818;
+  --color-netflix-light: #e5e5e5;
+  --font-inter: 'Inter', system-ui, sans-serif;
+}
+
+:root {
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #141414;
+  --bg-card: #1a1a1a;
+  --text-primary: #ffffff;
+  --text-secondary: #a3a3a3;
+  --accent: #e50914;
+  --accent-hover: #f40612;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-inter);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Hide scrollbar for movie rows */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Gradient overlays */
+.gradient-overlay {
+  background: linear-gradient(to top, var(--bg-primary) 0%, transparent 100%);
+}
+
+/* Card hover effects */
+.movie-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.movie-card:hover {
+  transform: scale(1.08);
+  z-index: 10;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+}
+
+/* Button styles */
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  padding: 12px 28px;
+  border-radius: 4px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-secondary {
+  background: rgba(109, 109, 110, 0.7);
+  color: white;
+  padding: 12px 28px;
+  border-radius: 4px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+  background: rgba(109, 109, 110, 0.4);
+}
+
+/* Loading animation */
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

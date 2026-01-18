@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+httpx
+beautifulsoup4
+fake-useragent
+lxml
+googlesearch-python
+duckduckgo-search
+motor
+dnspython
+gunicorn
+python-dotenv

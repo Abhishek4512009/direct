@@ -1,0 +1,32 @@
+services:
+  # Backend Service
+  - type: web
+    name: moviesda-backend
+    runtime: python
+    repo: https://github.com/Render-Examples/fastapi # Placeholder, Render will grab your repo
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app.main:app -k uvicorn.workers.UvicornWorker
+    envVars:
+      - key: MONGO_URI
+        sync: false # User must enter this in Render Dashboard
+      - key: PYTHON_VERSION
+        value: 3.9.0
+
+  # Frontend Service
+  - type: static
+    name: moviesda-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: moviesda-backend
+          property: url
