@@ -24,6 +24,21 @@ indexer = MovieIndexer()
 async def startup_event():
     # Start background indexing task
     asyncio.create_task(indexer.start_indexing())
+    # Start keep-alive task
+    asyncio.create_task(keep_alive())
+
+async def keep_alive():
+    """Background task to ping services every 5 minutes to prevent spin-down"""
+    import httpx
+    while True:
+        try:
+            print("Keep-Alive: Pinging services...")
+            async with httpx.AsyncClient() as client:
+                await client.get("https://moviesda-backend.onrender.com/", timeout=10)
+                await client.get("https://moviesda-frontend.onrender.com/", timeout=10)
+        except Exception as e:
+            print(f"Keep-Alive Error: {e}")
+        await asyncio.sleep(300) # 5 minutes
 
 @app.get("/")
 async def health_check():
