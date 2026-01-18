@@ -2,11 +2,6 @@ services:
   # Backend Service
   - type: web
     name: moviesda-backend
-    env: python # It is 'env' not 'runtime' for some versions, but 'runtime' is also used? validation says 'unknown type static'. 
-    # Actually for python it is 'env: python'. 
-    # Let's check the backend block too.
-    # The Backend block had 'runtime: python' which might also be wrong if strict. 
-    # Let's switch to standard 'env' keys.
     env: python
     rootDir: backend
     buildCommand: pip install -r requirements.txt
