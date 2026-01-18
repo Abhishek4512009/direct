@@ -16,15 +16,11 @@ services:
   # Frontend Service
   - type: web
     name: moviesda-frontend
-    env: static
+    env: node
     plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    startCommand: npx serve -s dist
     envVars:
       - key: VITE_API_URL
         fromService:
