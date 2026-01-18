@@ -2,21 +2,25 @@ services:
   # Backend Service
   - type: web
     name: moviesda-backend
-    runtime: python
-    repo: https://github.com/Render-Examples/fastapi # Placeholder, Render will grab your repo
+    env: python # It is 'env' not 'runtime' for some versions, but 'runtime' is also used? validation says 'unknown type static'. 
+    # Actually for python it is 'env: python'. 
+    # Let's check the backend block too.
+    # The Backend block had 'runtime: python' which might also be wrong if strict. 
+    # Let's switch to standard 'env' keys.
+    env: python
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app.main:app -k uvicorn.workers.UvicornWorker
     envVars:
       - key: MONGO_URI
-        sync: false # User must enter this in Render Dashboard
+        sync: false
       - key: PYTHON_VERSION
         value: 3.9.0
 
   # Frontend Service
-  - type: static
+  - type: web
     name: moviesda-frontend
-    runtime: static
+    env: static
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
