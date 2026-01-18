@@ -117,7 +117,7 @@ class MovieIndexer:
 
     async def search(self, query: str) -> List[Dict]:
         """Search via MongoDB regex"""
-        if not query or not self.collection:
+        if not query or self.collection is None:
             return []
         
         # Simple regex search for title
