@@ -57,6 +57,7 @@ class MovieIndexer:
                 base_url = year['link']
                 
                 page = 1
+                last_page_links = set()
                 while True:
                     if page == 1:
                         url = base_url
@@ -72,6 +73,13 @@ class MovieIndexer:
 
                     if not movies:
                         break
+
+                    # Check for duplicate page loop (e.g., Redirect to Home or same page)
+                    current_links = set(m['link'] for m in movies)
+                    if current_links == last_page_links:
+                        print(f"Indexer: Page {page} is identical to previous page. Stopping pagination for {year['name']}.")
+                        break
+                    last_page_links = current_links
 
                     # Check for "Sidebar Loop" trap via "look-ahead" existence check?
                     # Simply upserting is safer for now.

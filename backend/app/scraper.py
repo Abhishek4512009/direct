@@ -83,6 +83,8 @@ class MoviesdaScraper:
             if text == "0-9": continue # Skip numeric index
             if "telegram" in text.lower(): continue
             if "group" in text.lower(): continue
+            if "home" in text.lower(): continue # Skip Home links
+            if "dmca" in text.lower() or "disclaimer" in text.lower(): continue
             
             # Filter specifically logic related to "Movies" backlinks
             if "movies" in text.lower() and re.search(r'\d{4}', text): 
