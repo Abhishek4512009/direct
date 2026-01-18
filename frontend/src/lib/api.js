@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+let apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+if (!apiBaseUrl.startsWith('http')) apiBaseUrl = `https://${apiBaseUrl}`;
+
 const api = axios.create({
-    baseURL: (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/api',
+    baseURL: apiBaseUrl + '/api',
 });
 
 export const getYears = async () => {

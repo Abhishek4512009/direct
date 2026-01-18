@@ -28,4 +28,4 @@ services:
         fromService:
           type: web
           name: moviesda-backend
-          property: url
+          property: host

@@ -4,7 +4,9 @@ import Navbar from '../components/Navbar';
 import { Play, ArrowLeft, Loader } from 'lucide-react';
 import { generateGradient } from '../lib/ui-utils';
 
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/api';
+let apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+if (!apiBaseUrl.startsWith('http')) apiBaseUrl = `https://${apiBaseUrl}`;
+const API_BASE = apiBaseUrl + '/api';
 
 const Browse = () => {
     const [searchParams] = useSearchParams();

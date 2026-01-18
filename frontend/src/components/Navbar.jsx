@@ -26,7 +26,9 @@ const Navbar = () => {
                 setLoading(true);
                 try {
                     // Fetch from API
-                    const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/api';
+                    let apiHost = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+                    if (!apiHost.startsWith('http')) apiHost = `https://${apiHost}`;
+                    const apiBase = apiHost + '/api';
                     const res = await fetch(`${apiBase}/search?q=${encodeURIComponent(query)}`);
                     const data = await res.json();
                     setResults(data);
