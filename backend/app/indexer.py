@@ -40,7 +40,7 @@ class MovieIndexer:
             print("Indexer: Already running.")
             return
 
-        if not self.collection:
+        if self.collection is None:
             print("Indexer: No MongoDB connection. Skipping indexing.")
             return
 
