@@ -133,7 +133,11 @@ class MovieIndexer:
             {"title": {"$regex": query, "$options": "i"}}
         ).limit(50)
         
-        return await cursor.to_list(length=50)
+        results = await cursor.to_list(length=50)
+        for doc in results:
+            if '_id' in doc:
+                doc['_id'] = str(doc['_id'])
+        return results
 
     async def enrich_metadata(self, movies: List[Dict]) -> List[Dict]:
         """
