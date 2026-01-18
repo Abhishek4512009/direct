@@ -131,7 +131,7 @@ class MovieIndexer:
         """
         Enrich a list of live-scraped movies with metadata from MongoDB
         """
-        if not self.collection:
+        if self.collection is None:
             return movies
             
         links = [m['link'] for m in movies]
