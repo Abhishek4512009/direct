@@ -71,6 +71,9 @@ async def get_movies(year_url: str, pages: int = 3):
         
         return all_movies
     except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"CRITICAL ERROR in get_movies: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/details")
