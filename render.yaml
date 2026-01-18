@@ -3,6 +3,7 @@ services:
   - type: web
     name: moviesda-backend
     env: python
+    plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app.main:app -k uvicorn.workers.UvicornWorker
@@ -16,6 +17,7 @@ services:
   - type: web
     name: moviesda-frontend
     env: static
+    plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
