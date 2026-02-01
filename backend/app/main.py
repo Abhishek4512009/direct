@@ -4,10 +4,11 @@ from .scraper import MoviesdaScraper
 from .indexer import MovieIndexer
 from typing import List, Optional
 import asyncio
+import re
 
 app = FastAPI(title="MoviesDA Streaming API")
 
-# Enable CORS for frontend (Vite defaults to localhost:5173)
+# Enable CORS for frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # For development, allow all. In prod, lock this down.
@@ -22,7 +23,7 @@ indexer = MovieIndexer()
 
 @app.on_event("startup")
 async def startup_event():
-    # Start background indexing task
+    # Start background indexing task only
     asyncio.create_task(indexer.start_indexing())
 
 @app.get("/")
@@ -81,9 +82,6 @@ async def get_movie_details(movie_url: str):
     """Get quality variants/files for a movie"""
     try:
         data = await scraper.get_qualities(movie_url)
-        # Return just the qualities list for compatibility, 
-        # or return the whole object if frontend updates. 
-        # For now, let's return the list to be safe.
         return data.get('qualities', [])
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -111,7 +109,6 @@ async def get_stream_link(file_url: str):
         target_server = servers[0]
         
         # 3. Resolve
-        # Enable recursive depth for deep traversal
         final_link = await scraper.resolve_final_link(target_server['link'], depth=0)
         
         if not final_link:
@@ -126,23 +123,20 @@ async def get_auto_stream(movie_url: str):
     """
     Automatically resolve the best quality stream for a movie.
     Prefers 1080p > 720p > other qualities.
+    Refined to pick the LARGEST file size at the final level (Size-Optimized).
     """
     try:
-        # 1. Get qualities
+        # 1. Get qualities (Level 3)
         data = await scraper.get_qualities(movie_url)
         qualities = data.get('qualities', [])
         
         if not qualities:
             raise HTTPException(status_code=404, detail="No qualities found")
         
-        # 2. Sort by quality preference (Explicit Hierarchy)
-        # We want to find the BEST quality.
-        # Priority: 1080p > 720p > 640 > 480 > Original (Original can be anything, sometimes low quality cam)
+        # 2. Sort by quality preference (Level 3 Priority)
         quality_priority = ['1080', '720', '640', '480', 'original', 'hd']
-        
         selected_quality = None
         
-        # Try to find the highest priority match
         for priority in quality_priority:
             for q in qualities:
                 if priority in q['name'].lower():
@@ -151,67 +145,63 @@ async def get_auto_stream(movie_url: str):
             if selected_quality:
                 break
         
-        # Fallback if no specific quality found in names, take the LAST one (often highest quality in these lists)
-        # or the first if list is short. Actually, typically bottom one is best in sorted lists, but let's stick to first if no match.
         if not selected_quality:
              selected_quality = qualities[0]
 
         print(f"Selected Quality: {selected_quality['name']}")
         
-        # 3. Get files
+        # 3. Get files (Level 4)
         files = await scraper.get_files(selected_quality['link'])
         if not files:
             raise HTTPException(status_code=404, detail="No files found")
         
-        # Pick non-sample file AND sort by quality (Level 4 Resolution Check)
-        # Often Level 4 contains ["Movie 360p", "Movie 1080p"] etc. We must pick the best one.
+        # Filter samples and Sort Level 4 items
         non_sample_files = [f for f in files if "sample" not in f['name'].lower()]
+        candidates_l4 = non_sample_files if non_sample_files else files
+             
+        # Apply Priority Sorting to Level 4 items
+        l4_quality_priority = ['1080', '720', '640', '480', 'original', 'hd'] 
+        selected_file = None
         
-        if not non_sample_files:
-             # Fallback if only samples exist
-             selected_file = files[0] # Just take the first one
-        else:
-             # Apply Priority Sorting to Level 4 items
-             # We reuse the same priority list but apply it to the file list
-             # 1080p > 720p > 640 > 480 > Original > HD > 360
-             
-             # Note: 'Original' usually appears at Level 3. At Level 4 we see explicit resolutions.
-             l4_quality_priority = ['1080', '720', '640', '480', 'original', 'hd'] 
-             
-             best_file = None
-             for priority in l4_quality_priority:
-                 for f in non_sample_files:
-                     if priority in f['name'].lower():
-                         best_file = f
-                         break
-                 if best_file:
-                     break
-             
-             if best_file:
-                 selected_file = best_file
-             else:
-                 # If no priority keyword matched, just take the first one (or maybe the last one? typically list is desc or asc)
-                 # Let's take the first non-sample one.
-                 selected_file = non_sample_files[0]
+        for priority in l4_quality_priority:
+            for f in candidates_l4:
+                if priority in f['name'].lower():
+                    selected_file = f
+                    break
+            if selected_file:
+                break
+        
+        if not selected_file:
+            selected_file = candidates_l4[0]
         
         print(f"Selected File (Level 4): {selected_file['name']}")
         
-        # 4. Get Servers (which might actually be the file list in deeper hierarchies)
+        # 4. Get Servers (Level 5) - SIZE BASED SORTING
         servers = await scraper.get_servers(selected_file['link'])
         if not servers:
             raise HTTPException(status_code=404, detail="No servers found")
 
-        # Filter out samples from SERVERS/FILES list too
-        # In deep hierarchies, 'files' were folders, and 'servers' are the actual files (e.g. "Movie.mp4", "Movie Sample.mp4")
         non_sample_servers = [s for s in servers if "sample" not in s['server'].lower()]
+        candidates_l5 = non_sample_servers if non_sample_servers else servers
         
-        if not non_sample_servers:
-             # Fallback if only samples exist
-             target_server = servers[0]
-        else:
-             target_server = non_sample_servers[0]
+        # --- SIZE SORTER HELPER ---
+        def parse_size_mb(text):
+            """Extracts size (e.g. '2.4 GB') and converts to MB for comparison."""
+            match = re.search(r'(\d+(?:\.\d+)?)\s*(GB|MB)', text, re.IGNORECASE)
+            if not match:
+                return 0.0 
+            
+            val = float(match.group(1))
+            unit = match.group(2).upper()
+            
+            if unit == 'GB':
+                return val * 1024 
+            return val 
+        # --------------------------
+
+        target_server = max(candidates_l5, key=lambda s: parse_size_mb(s['server']))
         
-        print(f"Selected Server/File: {target_server['server']}")
+        print(f"Selected Server/File: {target_server['server']} (Size-Optimized)")
 
         # 5. Get Stream Link
         final_link = await scraper.resolve_final_link(target_server['link'], depth=0)
@@ -223,14 +213,17 @@ async def get_auto_stream(movie_url: str):
             "stream_url": final_link,
             "quality": selected_quality['name'],
             "filename": selected_file['name'],
+            "server_label": target_server['server'],
             "poster": data.get('meta', {}).get('poster'),
             "desc": data.get('meta', {}).get('desc')
         }
     except HTTPException:
         raise
     except Exception as e:
+        print(f"Error in auto-stream: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+    
