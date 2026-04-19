@@ -13,7 +13,7 @@ class MoviesdaScraper:
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.9",
         }
-        self.base_url = "https://gotopage.xyz/?ref=2026"  # Seed URL
+        self.base_url = "https://gotopage.top/?ref=2026"  # Seed URL
         self.client = httpx.AsyncClient(headers=self.headers, follow_redirects=True, timeout=30.0)
         self.resolved_base = None
 
