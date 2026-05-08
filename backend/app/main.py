@@ -3,11 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from .scraper import MoviesdaScraper
 from .indexer import MovieIndexer
 from typing import List, Optional
+from app.english import router as english_router
 import asyncio
 import re
 
 app = FastAPI(title="MoviesDA Streaming API")
-
+app.include_router(english_router)
 # Enable CORS for frontend
 app.add_middleware(
     CORSMiddleware,
