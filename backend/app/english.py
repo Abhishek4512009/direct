@@ -94,6 +94,12 @@ async def search_movies(q: str = Query(...)):
     data = await fetch_cinemeta(f"/catalog/movie/top/search={q}.json")
     return {"query": q, "results": [format_meta(m, "movie") for m in data.get("metas", [])]}
 
+@router.get("/genre/{genre}")
+@router.get("/movies/genre/{genre}")
+async def get_movies_by_genre(genre: str, skip: int = Query(0, ge=0)):
+    data = await fetch_cinemeta(f"/catalog/movie/top/genre={genre}&skip={skip}.json")
+    return {"genre": genre, "skip": skip, "has_more": data.get("hasMore", False), "results": [format_meta(m, "movie") for m in data.get("metas", [])]}
+
 @router.get("/movie/{imdb_id}")
 async def get_movie_detail(imdb_id: str):
     data = await fetch_cinemeta(f"/meta/movie/{imdb_id}.json")
@@ -117,11 +123,46 @@ async def search_series(q: str = Query(...)):
     data = await fetch_cinemeta(f"/catalog/series/top/search={q}.json")
     return {"query": q, "results": [format_meta(m, "series") for m in data.get("metas", [])]}
 
+@router.get("/series/genre/{genre}")
+async def get_series_by_genre(genre: str, skip: int = Query(0, ge=0)):
+    data = await fetch_cinemeta(f"/catalog/series/top/genre={genre}&skip={skip}.json")
+    return {"genre": genre, "skip": skip, "has_more": data.get("hasMore", False), "results": [format_meta(m, "series") for m in data.get("metas", [])]}
+
 @router.get("/series/{imdb_id}")
 async def get_series_detail(imdb_id: str):
     data = await fetch_cinemeta(f"/meta/series/{imdb_id}.json")
     if not data.get("meta"): raise HTTPException(404, "Series not found")
     return format_meta(data["meta"], "series")
+
+# --- TORRENTIO ---
+@router.get("/torrent/{item_type}/{imdb_id}")
+async def get_torrents(item_type: str, imdb_id: str, season: int = None, episode: int = None):
+    if item_type == "movie":
+        url = f"https://torrentio.strem.fun/stream/movie/{imdb_id}.json"
+    else:
+        if not season or not episode:
+            raise HTTPException(400, "Season and episode required for series torrents")
+        url = f"https://torrentio.strem.fun/stream/series/{imdb_id}:{season}:{episode}.json"
+    
+    try:
+        async with httpx.AsyncClient(timeout=10, follow_redirects=True) as client:
+            res = await client.get(url)
+            res.raise_for_status()
+            streams = res.json().get("streams", [])
+            results = []
+            for s in streams:
+                infoHash = s.get("infoHash")
+                magnet = f"magnet:?xt=urn:btih:{infoHash}&dn={imdb_id}" if infoHash else s.get("url")
+                results.append({
+                    "name": s.get("name", "Torrent"),
+                    "title": s.get("title", ""),
+                    "magnet": magnet,
+                    "infoHash": infoHash,
+                    "fileIdx": s.get("fileIdx")
+                })
+            return {"torrents": results}
+    except Exception as e:
+        return {"torrents": [], "error": str(e)}
 
 # --- UTILS ---
 @router.get("/genres")
