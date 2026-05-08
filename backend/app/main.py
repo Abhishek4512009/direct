@@ -223,7 +223,24 @@ async def get_auto_stream(movie_url: str):
     except Exception as e:
         print(f"Error in auto-stream: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
+@app.get("/api/english/test-vidsrc")
+async def test_vidsrc():
+    import httpx
+    results = {}
+    urls = {
+        "vidsrc_new": "https://vidsrc.to/vapi/movie/new/1",
+        "vidsrc_me": "https://vidsrc.me/movies/json",
+        "imdb_chart": "https://imdb-api.com/en/API/Top250Movies",
+        "flixhq": "https://flixhq.to/api/trending",
+    }
+    async with httpx.AsyncClient(timeout=10) as client:
+        for name, url in urls.items():
+            try:
+                r = await client.get(url)
+                results[name] = {"status": r.status_code, "reachable": True}
+            except Exception as e:
+                results[name] = {"reachable": False, "error": str(e)}
+    return results
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
